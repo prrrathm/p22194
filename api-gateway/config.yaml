@@ -1,0 +1,63 @@
+server:
+  addr: ":8080"
+  read_timeout: 10s
+  write_timeout: 30s
+  idle_timeout: 60s
+  shutdown_timeout: 15s
+
+# TLS termination (disabled by default)
+tls:
+  enabled: false
+  cert_file: ""
+  key_file: ""
+
+# Upstream microservices: key is the {service} path segment used in /api/v1/{service}/*
+upstreams:
+  orders:
+    url: "http://orders-service:8081"
+    timeout: 10s
+  users:
+    url: "http://localhost:8082"
+    timeout: 10s
+
+auth:
+  # Override with GATEWAY_AUTH_JWT_SECRET env var in production
+  jwt_secret: "hehe"
+  # Routes that bypass JWT validation (exact prefix match)
+  skip_routes: []
+
+ratelimit:
+  requests_per_second: 100
+  burst: 200
+
+log:
+  level: "info"   # debug | info | warn | error
+  format: "pretty"  # json | pretty
+
+metrics:
+  path: "/metrics"
+
+cache:
+  max_cost_mb: 64
+  default_ttl: 30s
+
+# Optional: path to a MaxMind GeoLite2 or GeoIP2 .mmdb file
+geoip:
+  db_path: ""
+
+cors:
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "PATCH"
+    - "DELETE"
+    - "HEAD"
+    - "OPTIONS"
+  allowed_headers:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+    - "X-Request-ID"
