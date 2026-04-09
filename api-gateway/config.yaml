@@ -19,6 +19,12 @@ upstreams:
   users:
     url: "http://localhost:8082"
     timeout: 10s
+  documents:
+    url: "http://localhost:8083"
+    timeout: 30s
+  blocks:
+    url: "http://localhost:8083"
+    timeout: 30s
 
 auth:
   # Override with GATEWAY_AUTH_JWT_SECRET env var in production

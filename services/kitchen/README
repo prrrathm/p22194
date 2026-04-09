@@ -1,0 +1,107 @@
+# Kitchen
+
+## EPIC:
+
+### Functional Requirements:
+
+#### Document Management
+1. Document/Text Editor (client)
+2. Create new document
+3. Delete document (soft delete)
+4. Archive document (status: archived)
+5. Get document by id
+6. Get documents by user id with pagination and relevant filters
+7. Get sub-documents by parent_document_id (for nested page navigation)
+
+#### Block Operations
+8. Insert block into document
+   - Default insert behaviour: append to end
+   - Request body:
+     1. block_data
+     2. document_id
+     3. insert_after_block_id (optional) — if empty, insert at top of document
+9. Update block content
+   - Request body:
+     1. block_id
+     2. block_data
+10. Reorder block in document (drag and drop)
+11. Delete block in a document (soft delete)
+
+#### Block Types
+- rich_text
+- heading_1 | heading_2 | heading_3
+- code (with language metadata)
+- image
+- divider
+- bulleted_list | numbered_list
+
+#### Sharing & Permissions
+12. Share document with a user (assign role: viewer | editor | owner)
+13. Remove user access from document
+14. Get users with access to a document
+
+#### Real-time Collaboration
+15. Open a gRPC stream session for a document (editing mode)
+16. Broadcast CRDT operations to all connected clients on the stream
+17. On client reconnect, sync delta of missed operations since client's last known state vector
+
+---
+
+### Non Functional Requirements
+
+1. Scale - 100 Users for now
+2. Latency - 100ms P99 for REST endpoints; real-time stream latency best-effort
+3. CAP Tradeoff - system favours availability over consistency; concurrent edits use eventual consistency via the real-time sync layer
+4. Real-time sync strategy: **CRDT (Automerge / Yjs)**
+   - Each client holds a full local replica of the document state
+   - Edits are emitted as CRDT operations (not full snapshots) over the gRPC stream
+   - Server merges incoming operations using CRDT rules and broadcasts the delta to all other connected clients
+   - Clients apply remote deltas to their local replica; final state converges automatically regardless of operation arrival order
+   - No locks required — multiple users can edit the same block simultaneously
+   - Server persists the CRDT state vector per block as the source of truth
+   - On reconnect, client sends its last known state vector; server replies with the missing delta
+5. gRPC persistent stream per document session for broadcasting CRDT operations
+6. Soft-delete operations (document delete, block delete) use strong consistency — no eventual merge for destructive actions
+
+---
+
+### Models
+
+1. Document
+   - id
+   - created_by_user_id
+   - created_at
+   - last_updated_at
+   - title
+   - title_icon
+   - deleted_at
+   - status: active | archived | deleted
+   - parent_document_id (nullable — root documents have no parent)
+   - snapshot (serialised full-document block order for fast reads; updated async on each write)
+
+2. Block
+   - id
+   - document_id
+   - block_type: rich_text | heading_1 | heading_2 | heading_3 | code | image | divider | bulleted_list | numbered_list
+   - content_state (serialised CRDT state vector for this block's content — Automerge/Yjs binary format)
+   - content_meta (type-specific metadata; e.g. for code: `{ language: "python" }`, for image: `{ url, alt_text }`)
+   - insert_after_block_id (nullable — null means this block is at the top; forms a singly linked list for ordering)
+   - deleted_at
+
+3. Users -> inherit from Users service
+
+4. Document_to_user_link
+   - id
+   - document_id
+   - user_id
+   - role: owner | editor | viewer
+   - invited_by_user_id
+   - created_at
+
+---
+
+### Notes
+
+- **Block ordering**: Blocks use a linked-list via `insert_after_block_id`. Full-document reads resolve the chain in application layer using the `snapshot` field to avoid expensive per-request traversal. Snapshot is invalidated and rebuilt async on any structural change.
+- **CRDT state storage**: `content_state` on each block stores the full Automerge/Yjs binary document. On write, the server merges the incoming operation into this state and persists the result. Raw readable text for indexing/search can be derived from the CRDT state as a separate projection.
+- **Parent documents**: Nested pages are supported via `parent_document_id`. The client is responsible for rendering breadcrumbs using the hierarchy. API provides sub-document listing (FR 7).

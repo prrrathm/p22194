@@ -1,0 +1,257 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-04-09T00:00:00.000Z",
+  "__export_source": "kitchen-service",
+  "resources": [
+    {
+      "_id": "wrk_kitchen",
+      "_type": "workspace",
+      "name": "Kitchen Service",
+      "description": "Notion-like document editor backend",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_kitchen_base",
+      "_type": "environment",
+      "parentId": "wrk_kitchen",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8083",
+        "token": "YOUR_JWT_TOKEN_HERE",
+        "document_id": "DOCUMENT_OBJECT_ID",
+        "block_id": "BLOCK_OBJECT_ID",
+        "user_id": "USER_OBJECT_ID"
+      }
+    },
+
+    {
+      "_id": "fld_documents",
+      "_type": "request_group",
+      "parentId": "wrk_kitchen",
+      "name": "Documents",
+      "description": "Document management endpoints"
+    },
+    {
+      "_id": "fld_blocks",
+      "_type": "request_group",
+      "parentId": "wrk_kitchen",
+      "name": "Blocks",
+      "description": "Block operation endpoints"
+    },
+    {
+      "_id": "fld_shares",
+      "_type": "request_group",
+      "parentId": "wrk_kitchen",
+      "name": "Sharing & Permissions",
+      "description": "Document sharing and access control"
+    },
+
+    {
+      "_id": "req_create_document",
+      "_type": "request",
+      "parentId": "fld_documents",
+      "name": "Create Document",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/documents",
+      "description": "Creates a new document owned by the authenticated user.\nOptionally nest under a parent document via parent_document_id.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"My New Document\",\n  \"title_icon\": \"📝\",\n  \"parent_document_id\": null\n}"
+      }
+    },
+    {
+      "_id": "req_list_documents",
+      "_type": "request",
+      "parentId": "fld_documents",
+      "name": "List Documents",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/documents",
+      "description": "Returns a paginated list of documents owned by the authenticated user.\nQuery params: status (active|archived|deleted), parent_id, limit, cursor.",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "parameters": [
+        { "name": "status", "value": "active", "disabled": true },
+        { "name": "parent_id", "value": "{{ _.document_id }}", "disabled": true },
+        { "name": "limit", "value": "20", "disabled": true },
+        { "name": "cursor", "value": "", "disabled": true }
+      ]
+    },
+    {
+      "_id": "req_get_document",
+      "_type": "request",
+      "parentId": "fld_documents",
+      "name": "Get Document by ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}",
+      "description": "Returns a single document by its ObjectID. Includes the ordered snapshot of block IDs.",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ]
+    },
+    {
+      "_id": "req_list_children",
+      "_type": "request",
+      "parentId": "fld_documents",
+      "name": "List Sub-Documents (Children)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}/children",
+      "description": "Returns all direct child documents of the given parent document. Used for nested page navigation.",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ]
+    },
+    {
+      "_id": "req_delete_document",
+      "_type": "request",
+      "parentId": "fld_documents",
+      "name": "Delete Document (Soft)",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}",
+      "description": "Soft-deletes a document (sets status=deleted, deleted_at=now). The document is retained in the database.",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ]
+    },
+    {
+      "_id": "req_archive_document",
+      "_type": "request",
+      "parentId": "fld_documents",
+      "name": "Archive Document",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}/archive",
+      "description": "Sets the document status to 'archived'. Archived documents are excluded from the default list view.",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ]
+    },
+
+    {
+      "_id": "req_insert_block",
+      "_type": "request",
+      "parentId": "fld_blocks",
+      "name": "Insert Block",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}/blocks",
+      "description": "Inserts a new block into a document.\n- Omit insert_after_block_id (or set null) to insert at the top.\n- Set insert_after_block_id to the preceding block's ID to append after it.\n- content_state is base64-encoded CRDT binary (Automerge/Yjs).\n- content_meta is type-specific: code → {\"language\":\"python\"}, image → {\"url\":\"...\",\"alt_text\":\"...\"}",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"block_type\": \"rich_text\",\n  \"content_state\": null,\n  \"content_meta\": null,\n  \"insert_after_block_id\": null\n}"
+      }
+    },
+    {
+      "_id": "req_insert_block_code",
+      "_type": "request",
+      "parentId": "fld_blocks",
+      "name": "Insert Block (Code)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}/blocks",
+      "description": "Example: insert a code block with language metadata after an existing block.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"block_type\": \"code\",\n  \"content_state\": null,\n  \"content_meta\": {\n    \"language\": \"python\"\n  },\n  \"insert_after_block_id\": \"{{ _.block_id }}\"\n}"
+      }
+    },
+    {
+      "_id": "req_update_block",
+      "_type": "request",
+      "parentId": "fld_blocks",
+      "name": "Update Block Content",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/blocks/{{ _.block_id }}",
+      "description": "Replaces the full CRDT content_state of a block (not a delta — send the complete merged state).\nAlso accepts optional content_meta updates.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"content_state\": null,\n  \"content_meta\": null\n}"
+      }
+    },
+    {
+      "_id": "req_reorder_block",
+      "_type": "request",
+      "parentId": "fld_blocks",
+      "name": "Reorder Block",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/blocks/{{ _.block_id }}/reorder",
+      "description": "Moves a block to a new position in its document by updating its insert_after_block_id pointer.\nSet insert_after_block_id to null to move the block to the top of the document.\nThe document snapshot is rebuilt after reordering.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"insert_after_block_id\": null\n}"
+      }
+    },
+    {
+      "_id": "req_delete_block",
+      "_type": "request",
+      "parentId": "fld_blocks",
+      "name": "Delete Block (Soft)",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/blocks/{{ _.block_id }}",
+      "description": "Soft-deletes a block (sets deleted_at=now). The block is excluded from all subsequent document reads. Document snapshot is rebuilt.",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ]
+    },
+
+    {
+      "_id": "req_share_document",
+      "_type": "request",
+      "parentId": "fld_shares",
+      "name": "Share Document",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}/shares",
+      "description": "Grants a user access to a document with a specified role (owner | editor | viewer).\nThe authenticated user is recorded as the inviter.\nReturns 409 if the user already has access.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"user_id\": \"{{ _.user_id }}\",\n  \"role\": \"editor\"\n}"
+      }
+    },
+    {
+      "_id": "req_get_shares",
+      "_type": "request",
+      "parentId": "fld_shares",
+      "name": "Get Document Shares",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}/shares",
+      "description": "Returns all users who have been granted access to the document, along with their roles and the inviter.",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ]
+    },
+    {
+      "_id": "req_remove_access",
+      "_type": "request",
+      "parentId": "fld_shares",
+      "name": "Remove User Access",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/documents/{{ _.document_id }}/shares/{{ _.user_id }}",
+      "description": "Revokes a user's access to a document. No-ops gracefully if the user did not have access.",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.token }}" }
+      ]
+    }
+  ]
+}

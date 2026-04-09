@@ -32,3 +32,13 @@ tasks:
       desc: Run User service dev
       cmds:
           - cd services/users && air
+
+  run-service-kitchen:
+    desc: Run Kitchen service
+    cmds:
+      - cd services/kitchen && go run .
+
+  dev-service-kitchen:
+    desc: Run Kitchen service dev
+    cmds:
+      - cd services/kitchen && air

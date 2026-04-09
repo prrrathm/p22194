@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package collab;
+
+option go_package = "p22194.prrrathm.com/kitchen/internal/collab";
+
+// CollabService provides real-time document collaboration via a bidirectional
+// gRPC stream. Each connected client holds a full local CRDT replica.
+// The server acts as a relay and persistent store for CRDT state.
+service CollabService {
+  // EditSession opens a persistent bidirectional stream for a document session.
+  //
+  // On connect: the client sends an initial EditRequest with document_id and
+  // its current state_vector. The server responds with the current content_state
+  // for each block that has diverged from the client's state vector.
+  //
+  // On each subsequent edit: the client sends an EditRequest with a crdt_operation
+  // (encoded CRDT delta). The server persists the updated content_state and
+  // broadcasts an EditResponse to all other connected clients for the document.
+  rpc EditSession(stream EditRequest) returns (stream EditResponse) {}
+}
+
+// EditRequest is sent by the client over the bidirectional stream.
+message EditRequest {
+  // document_id is the ObjectID hex of the document being edited.
+  // Must be set on every message.
+  string document_id = 1;
+
+  // block_id is the ObjectID hex of the block being edited.
+  // Empty on the initial sync request.
+  string block_id = 2;
+
+  // crdt_operation is the encoded CRDT delta (Automerge/Yjs binary format)
+  // representing the change to apply to block_id's content.
+  // Empty on the initial sync request.
+  bytes crdt_operation = 3;
+
+  // state_vector is the client's current CRDT state vector for the document.
+  // Sent once on the initial message to trigger a delta sync from the server.
+  // The server replies with the missing operations since this state vector.
+  bytes state_vector = 4;
+}
+
+// EditResponse is sent by the server to clients over the bidirectional stream.
+message EditResponse {
+  // block_id is the ObjectID hex of the block that was updated.
+  string block_id = 1;
+
+  // crdt_delta is the encoded CRDT delta (Automerge/Yjs binary format) to apply
+  // to the client's local replica of block_id.
+  bytes crdt_delta = 2;
+
+  // from_user_id is the ObjectID hex of the user who sent the originating edit.
+  // Empty for server-initiated sync responses.
+  string from_user_id = 3;
+}

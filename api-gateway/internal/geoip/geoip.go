@@ -10,7 +10,7 @@ import (
 // Record holds the GeoIP data we extract per lookup.
 type Record struct {
 	Country struct {
-		ISOCode string `maxminddb:"iso_code"`
+		ISOCode string            `maxminddb:"iso_code"`
 		Names   map[string]string `maxminddb:"names"`
 	} `maxminddb:"country"`
 	City struct {

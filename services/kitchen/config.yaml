@@ -1,0 +1,13 @@
+addr: ":8083"
+grpc_addr: ":8084"
+
+mongo:
+  uri: "mongodb://localhost:27017"
+  db: "p22194"
+
+jwt:
+  secret: "hehe" # override via KITCHEN_JWT_SECRET env
+
+log:
+  level: "info"
+  format: "pretty"
