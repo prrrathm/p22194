@@ -1,13 +1,25 @@
-import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { useAuth } from "~/contexts/auth-context";
+import { Spinner } from "~/components/ui/spinner";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
-  ];
+export function meta() {
+  return [{ title: "Kitchen" }];
 }
 
 export default function Home() {
-  return <Welcome />;
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading) {
+      navigate(user ? "/app" : "/auth/sign-in", { replace: true });
+    }
+  }, [user, isLoading, navigate]);
+
+  return (
+    <div className="flex h-screen items-center justify-center bg-white dark:bg-neutral-950">
+      <Spinner />
+    </div>
+  );
 }

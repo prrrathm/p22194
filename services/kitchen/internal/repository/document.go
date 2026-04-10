@@ -150,6 +150,23 @@ func (r *DocumentRepo) Archive(ctx context.Context, id bson.ObjectID) error {
 	return nil
 }
 
+// UpdateMetadata updates the title and/or title_icon of a document.
+// Only non-empty values are applied.
+func (r *DocumentRepo) UpdateMetadata(ctx context.Context, id bson.ObjectID, title, titleIcon string) error {
+	set := bson.M{"last_updated_at": time.Now().UTC()}
+	if title != "" {
+		set["title"] = title
+	}
+	if titleIcon != "" {
+		set["title_icon"] = titleIcon
+	}
+	_, err := r.col.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": set})
+	if err != nil {
+		return fmt.Errorf("document_repo: update metadata: %w", err)
+	}
+	return nil
+}
+
 // UpdateSnapshot replaces the snapshot field with the given ordered block ID slice.
 func (r *DocumentRepo) UpdateSnapshot(ctx context.Context, id bson.ObjectID, snapshot []string) error {
 	_, err := r.col.UpdateOne(ctx,

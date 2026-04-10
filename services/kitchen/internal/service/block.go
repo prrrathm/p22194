@@ -20,8 +20,8 @@ var (
 
 // BlockService implements block management business logic.
 type BlockService struct {
-	blocks   *repository.BlockRepo
-	docSvc   *DocumentService
+	blocks *repository.BlockRepo
+	docSvc *DocumentService
 }
 
 // NewBlockService constructs a BlockService.
@@ -81,8 +81,9 @@ func (s *BlockService) Update(ctx context.Context, blockID bson.ObjectID, req mo
 	return block, nil
 }
 
-// Reorder moves a block within its document by updating its insert_after_block_id.
-// After reordering, the document snapshot is rebuilt.
+// Reorder moves a block within its document by performing a proper linked-list
+// insertion: it closes the gap at the old position and relinks the displaced
+// block at the new position before rebuilding the document snapshot.
 func (s *BlockService) Reorder(ctx context.Context, blockID bson.ObjectID, req models.ReorderBlockRequest) (*models.Block, error) {
 	block, err := s.getActive(ctx, blockID)
 	if err != nil {
@@ -98,8 +99,42 @@ func (s *BlockService) Reorder(ctx context.Context, blockID bson.ObjectID, req m
 		insertAfter = &id
 	}
 
+	// No-op: block is already at the requested position.
+	alreadyInPlace := (insertAfter == nil && block.InsertAfterBlockID == nil) ||
+		(insertAfter != nil && block.InsertAfterBlockID != nil && *insertAfter == *block.InsertAfterBlockID)
+	if alreadyInPlace {
+		return block, nil
+	}
+
+	// Block that currently follows the moved block (will inherit its old predecessor).
+	nextOfMoved, err := s.blocks.FindByInsertAfter(ctx, block.DocumentID, &blockID)
+	if err != nil {
+		return nil, fmt.Errorf("block_service: reorder find next of moved: %w", err)
+	}
+
+	// Block that currently follows the target position (will follow the moved block after the move).
+	nextOfTarget, err := s.blocks.FindByInsertAfter(ctx, block.DocumentID, insertAfter)
+	if err != nil {
+		return nil, fmt.Errorf("block_service: reorder find next of target: %w", err)
+	}
+
+	// Close the gap: the block that was after M now points to M's old predecessor.
+	if nextOfMoved != nil && nextOfMoved.ID != blockID {
+		if err := s.blocks.UpdateInsertAfter(ctx, nextOfMoved.ID, block.InsertAfterBlockID); err != nil {
+			return nil, fmt.Errorf("block_service: reorder close gap: %w", err)
+		}
+	}
+
+	// Move M to its new position.
 	if err := s.blocks.UpdateInsertAfter(ctx, blockID, insertAfter); err != nil {
 		return nil, fmt.Errorf("block_service: reorder: %w", err)
+	}
+
+	// The block that was after the target now follows M.
+	if nextOfTarget != nil && nextOfTarget.ID != blockID {
+		if err := s.blocks.UpdateInsertAfter(ctx, nextOfTarget.ID, &blockID); err != nil {
+			return nil, fmt.Errorf("block_service: reorder link next: %w", err)
+		}
 	}
 
 	block.InsertAfterBlockID = insertAfter
@@ -130,6 +165,15 @@ func (s *BlockService) Delete(ctx context.Context, blockID bson.ObjectID) error 
 	}
 
 	return nil
+}
+
+// ListByDocument returns all active blocks for a document, ordered by the document snapshot.
+func (s *BlockService) ListByDocument(ctx context.Context, documentID bson.ObjectID) ([]models.Block, error) {
+	blocks, err := s.blocks.ListByDocument(ctx, documentID)
+	if err != nil {
+		return nil, fmt.Errorf("block_service: list by document: %w", err)
+	}
+	return blocks, nil
 }
 
 // getActive fetches a block and returns ErrBlockNotFound if it is missing or soft-deleted.

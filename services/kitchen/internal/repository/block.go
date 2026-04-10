@@ -119,6 +119,30 @@ func (r *BlockRepo) SoftDelete(ctx context.Context, id bson.ObjectID) error {
 	return nil
 }
 
+// FindByInsertAfter returns the active block whose insert_after_block_id equals predecessor
+// within the given document. Pass nil predecessor to find the head block (no insert_after set).
+// Returns nil, nil when no such block exists.
+func (r *BlockRepo) FindByInsertAfter(ctx context.Context, documentID bson.ObjectID, predecessor *bson.ObjectID) (*models.Block, error) {
+	filter := bson.M{
+		"document_id": documentID,
+		"deleted_at":  bson.M{"$exists": false},
+	}
+	if predecessor == nil {
+		filter["insert_after_block_id"] = bson.M{"$exists": false}
+	} else {
+		filter["insert_after_block_id"] = *predecessor
+	}
+	var b models.Block
+	err := r.col.FindOne(ctx, filter).Decode(&b)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("block_repo: find by insert after: %w", err)
+	}
+	return &b, nil
+}
+
 // FindByIDs returns blocks matching the given IDs, preserving no particular order.
 func (r *BlockRepo) FindByIDs(ctx context.Context, ids []bson.ObjectID) ([]models.Block, error) {
 	cur, err := r.col.Find(ctx, bson.M{"_id": bson.M{"$in": ids}})

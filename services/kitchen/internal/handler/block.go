@@ -215,6 +215,33 @@ func (h *BlockHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
+// List handles GET /api/v1/documents/{id}/blocks.
+//
+// Returns all active blocks for the given document. The caller should order
+// them using the document's snapshot field (ordered block IDs).
+//
+// Auth: Bearer JWT required.
+//
+// Response 200: [ BlockResponse, ... ]
+func (h *BlockHandler) List(w http.ResponseWriter, r *http.Request) {
+	docID, ok := parseObjectID(w, r, "id")
+	if !ok {
+		return
+	}
+
+	blocks, err := h.svc.ListByDocument(r.Context(), docID)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+
+	resp := make([]models.BlockResponse, len(blocks))
+	for i, b := range blocks {
+		resp[i] = b.ToResponse()
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
 // ── Private helpers ──────────────────────────────────────────────────────────
 
 func parseObjectID(w http.ResponseWriter, r *http.Request, param string) (bson.ObjectID, bool) {

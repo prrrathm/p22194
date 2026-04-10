@@ -53,11 +53,13 @@ func New(
 
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/", docs.GetByID)
+				r.Patch("/", docs.Update)
 				r.Delete("/", docs.Delete)
 				r.Patch("/archive", docs.Archive)
 				r.Get("/children", docs.ListChildren)
 
 				// Blocks nested under document
+				r.Get("/blocks", blocks.List)
 				r.Post("/blocks", blocks.Insert)
 
 				// Sharing nested under document

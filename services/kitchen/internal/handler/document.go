@@ -205,6 +205,32 @@ func (h *DocumentHandler) ListChildren(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"documents": resps})
 }
 
+// Update handles PATCH /api/v1/documents/{id}.
+//
+// Updates title and/or title_icon. Omitted fields are left unchanged.
+//
+// Auth: Bearer JWT required.
+//
+// Response 200: { DocumentResponse }
+func (h *DocumentHandler) Update(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.parseIDParam(w, r, "id")
+	if !ok {
+		return
+	}
+
+	var req models.UpdateDocumentRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+
+	doc, err := h.svc.Update(r.Context(), id, req)
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, doc.ToResponse())
+}
+
 // Delete handles DELETE /api/v1/documents/{id}.
 //
 // Soft-deletes the document (sets status=deleted, deleted_at=now).

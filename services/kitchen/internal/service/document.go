@@ -132,6 +132,24 @@ func (s *DocumentService) Archive(ctx context.Context, id bson.ObjectID) error {
 	return s.docs.Archive(ctx, id)
 }
 
+// Update applies title/icon changes to an existing document.
+func (s *DocumentService) Update(ctx context.Context, id bson.ObjectID, req models.UpdateDocumentRequest) (*models.Document, error) {
+	doc, err := s.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.docs.UpdateMetadata(ctx, id, req.Title, req.TitleIcon); err != nil {
+		return nil, fmt.Errorf("document_service: update: %w", err)
+	}
+	if req.Title != "" {
+		doc.Title = req.Title
+	}
+	if req.TitleIcon != "" {
+		doc.TitleIcon = req.TitleIcon
+	}
+	return doc, nil
+}
+
 // RebuildSnapshot resolves the block linked list for documentID and persists the
 // ordered block ID slice to the document's snapshot field.
 func (s *DocumentService) RebuildSnapshot(ctx context.Context, documentID bson.ObjectID) error {
