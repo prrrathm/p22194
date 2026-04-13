@@ -3,9 +3,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter()],
-  resolve: {
-    dedupe: ["react", "react-dom", "react-router"],
-    tsconfigPaths: true,
-  },
+	plugins: [tailwindcss(), reactRouter()],
+	resolve: {
+		dedupe: ["react", "react-dom", "react-router"],
+		tsconfigPaths: true,
+	},
 });
