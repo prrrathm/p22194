@@ -1,0 +1,8 @@
+go 1.23.0
+
+use (
+	./mdb-schemas
+	./api-gateway
+	./services/users
+	./services/kitchen
+)

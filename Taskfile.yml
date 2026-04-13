@@ -6,6 +6,16 @@ vars:
   GREETING: Hello, world!
 
 tasks:
+  init:
+    desc: Initialize git submodules after a fresh clone
+    cmds:
+      - git submodule update --init --recursive
+
+  update-submodules:
+    desc: Pull latest changes from all submodule remotes
+    cmds:
+      - git submodule update --remote --merge
+
   default:
     desc: Print a greeting message
     cmds:

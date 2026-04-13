@@ -1,0 +1,20 @@
+[submodule "mdb-schemas"]
+	path = mdb-schemas
+	url = https://github.com/prrrathm/p22194-mdb.git
+	branch = main
+[submodule "api-gateway"]
+	path = api-gateway
+	url = https://github.com/prrrathm/p22194-api-gateway.git
+	branch = main
+[submodule "services/users"]
+	path = services/users
+	url = https://github.com/prrrathm/p22194-svc-users.git
+	branch = main
+[submodule "services/kitchen"]
+	path = services/kitchen
+	url = https://github.com/prrrathm/p22194-svc-kitchen.git
+	branch = main
+[submodule "clients/kitchen-client"]
+	path = clients/kitchen-client
+	url = https://github.com/prrrathm/p22194-client-kitchen.git
+	branch = main
