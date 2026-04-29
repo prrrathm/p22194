@@ -4,5 +4,6 @@ use (
 	./api-gateway
 	./mdb-schemas
 	./services/kitchen
+	./services/mail
 	./services/users
 )

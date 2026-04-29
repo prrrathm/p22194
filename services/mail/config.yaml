@@ -1,0 +1,11 @@
+addr: ":8085"
+
+mail:
+  from_email: "noreply@example.com"
+  from_name: "P22194"
+  resend_api_base: "https://api.resend.com"
+  request_timeout: "10s"
+
+log:
+  level: "info"
+  format: "pretty"

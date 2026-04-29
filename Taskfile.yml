@@ -2,6 +2,8 @@
 
 version: '3'
 
+dotenv: ['.env']
+
 vars:
   GREETING: Hello, world!
 
@@ -52,3 +54,26 @@ tasks:
     desc: Run Kitchen service dev
     cmds:
       - cd services/kitchen && air
+
+  run-service-mail:
+    desc: Run Mail service
+    cmds:
+      - cd services/mail && set -a && . ../../.env && set +a && go run .
+
+  dev-service-mail:
+    desc: Run Mail service dev
+    cmds:
+      - cd services/mail && air
+
+  dev-client-kitchen:
+    desc: Run Kitchen client dev
+    cmds:
+      - cd clients/kitchen-client && bun run dev
+
+  dev:
+    desc: Run all services concurrently (gateway, kitchen, mail, client)
+    deps:
+      - dev-gateway
+      - dev-service-kitchen
+      - dev-service-mail
+      - dev-client-kitchen
