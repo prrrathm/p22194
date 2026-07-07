@@ -18,3 +18,11 @@
 	path = clients/kitchen-client
 	url = https://github.com/prrrathm/p22194-client-kitchen.git
 	branch = main
+[submodule "services/find-my-trip"]
+	path = services/find-my-trip
+	url = https://github.com/prrrathm/find-my-trip-svc.git
+	branch = main
+[submodule "clients/find-my-trip-client"]
+	path = clients/find-my-trip-client
+	url = https://github.com/prrrathm/find-my-trip-client.git
+	branch = main

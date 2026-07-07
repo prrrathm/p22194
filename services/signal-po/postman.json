@@ -1,0 +1,239 @@
+{
+  "info": {
+    "name": "Signal PO Service",
+    "_postman_id": "signal-po-service-collection",
+    "description": "Purchase order confirmation triage service. Ingests supplier emails, extracts PO fields via LLM, compares against expected PO records, and surfaces mismatches in an action center.\n\nAll requests route through the API Gateway. NOTE: the 'signal-po' upstream must be registered in api-gateway/config.yaml before these routes are live.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gateway_url",       "value": "http://localhost:8080", "type": "string" },
+    { "key": "token",             "value": "YOUR_JWT_ACCESS_TOKEN",  "type": "string" },
+    { "key": "email_id",          "value": "EMAIL_OBJECT_ID",        "type": "string" },
+    { "key": "po_id",             "value": "PO_OBJECT_ID",           "type": "string" },
+    { "key": "confirmation_id",   "value": "CONFIRMATION_OBJECT_ID", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Emails",
+      "description": "Ingest and retrieve raw supplier emails.",
+      "item": [
+        {
+          "name": "Ingest Email",
+          "request": {
+            "method": "POST",
+            "description": "Submit a raw supplier email for processing. The service extracts PO fields, matches to a PO record, and flags mismatches.",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/emails",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "emails"]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"supplier_name\": \"Acme Supplies\",\n  \"subject\": \"RE: PO-2024-001 Confirmation\",\n  \"body\": \"Hi, we confirm PO-2024-001 for 500 units at $12.50 each. Expected delivery: 2024-08-15.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Emails",
+          "request": {
+            "method": "GET",
+            "description": "Returns a paginated list of ingested emails. Filter by status: pending | processed | unmatched.",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/emails",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "emails"],
+              "query": [
+                { "key": "status", "value": "pending",  "disabled": true },
+                { "key": "limit",  "value": "20",       "disabled": true },
+                { "key": "cursor", "value": "",         "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Email by ID",
+          "request": {
+            "method": "GET",
+            "description": "Returns a single ingested email with its extracted fields and processing status.",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/emails/{{email_id}}",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "emails", "{{email_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Purchase Orders",
+      "description": "Manage the expected PO records used for mismatch comparison.",
+      "item": [
+        {
+          "name": "Create Purchase Order",
+          "request": {
+            "method": "POST",
+            "description": "Register a new expected purchase order. Used as the baseline for comparing against supplier confirmations.",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/purchase-orders",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "purchase-orders"]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"po_number\": \"PO-2024-001\",\n  \"supplier_name\": \"Acme Supplies\",\n  \"expected_qty\": 500,\n  \"expected_delivery_date\": \"2024-08-10\",\n  \"expected_unit_price\": 12.50\n}"
+            }
+          }
+        },
+        {
+          "name": "List Purchase Orders",
+          "request": {
+            "method": "GET",
+            "description": "Returns all purchase orders. Filter by status: open | matched | needs_review | high_priority_flag.",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/purchase-orders",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "purchase-orders"],
+              "query": [
+                { "key": "status", "value": "needs_review", "disabled": true },
+                { "key": "limit",  "value": "20",           "disabled": true },
+                { "key": "cursor", "value": "",             "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Purchase Order by ID",
+          "request": {
+            "method": "GET",
+            "description": "Returns a single PO record with its current status and linked confirmations.",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/purchase-orders/{{po_id}}",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "purchase-orders", "{{po_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Action Center",
+      "description": "Review parsed confirmations, inspect mismatches, and take triage actions.",
+      "item": [
+        {
+          "name": "List Confirmations",
+          "request": {
+            "method": "GET",
+            "description": "Returns all parsed PO confirmations. Filter by status: matched | needs_review | high_priority_flag.",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/confirmations",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "confirmations"],
+              "query": [
+                { "key": "status", "value": "needs_review", "disabled": true },
+                { "key": "limit",  "value": "20",           "disabled": true },
+                { "key": "cursor", "value": "",             "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Confirmation by ID",
+          "request": {
+            "method": "GET",
+            "description": "Returns a single parsed confirmation with extracted fields, mismatch details, and confidence score.",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/confirmations/{{confirmation_id}}",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "confirmations", "{{confirmation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Approve Confirmation",
+          "request": {
+            "method": "POST",
+            "description": "Mark a confirmation as approved. Sets status to 'matched' and logs the action in the audit trail.",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/confirmations/{{confirmation_id}}/approve",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "confirmations", "{{confirmation_id}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Snooze Confirmation",
+          "request": {
+            "method": "POST",
+            "description": "Snooze a confirmation for later review. Optionally specify a snooze_until datetime.",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/confirmations/{{confirmation_id}}/snooze",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "confirmations", "{{confirmation_id}}", "snooze"]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"snooze_until\": \"2024-08-01T09:00:00Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Resolve Confirmation",
+          "request": {
+            "method": "POST",
+            "description": "Mark a confirmation as resolved after manual triage. Logs the resolution in the audit trail.",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/signal-po/confirmations/{{confirmation_id}}/resolve",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "signal-po", "confirmations", "{{confirmation_id}}", "resolve"]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"note\": \"Discussed with supplier, accepted revised delivery date.\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
