@@ -1,4 +1,4 @@
-go 1.25.0
+go 1.26.4
 
 use (
 	./api-gateway
@@ -6,4 +6,5 @@ use (
 	./services/kitchen
 	./services/mail
 	./services/users
+	./services/p22194-god-svc
 )

@@ -30,3 +30,7 @@
 	path = clients/p22194-god-client
 	url = https://github.com/prrrathm/p22194-god-client.git
 	branch = main
+[submodule "services/p22194-god-svc"]
+	path = services/p22194-god-svc
+	url = https://github.com/prrrathm/p22194-god-svc.git
+	branch = main

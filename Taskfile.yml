@@ -55,6 +55,16 @@ tasks:
     cmds:
       - cd services/kitchen && air
 
+  run-service-god:
+    desc: Run God service
+    cmds:
+      - cd services/p22194-god-svc && go run .
+
+  dev-service-god:
+    desc: Run God service dev
+    cmds:
+      - cd services/p22194-god-svc && air
+
   run-service-mail:
     desc: Run Mail service
     cmds:
@@ -65,10 +75,30 @@ tasks:
     cmds:
       - cd services/mail && air
 
+  dev-client-god:
+    desc: Run God client dev
+    cmds:
+      - cd clients/p22194-god-client && bun run dev
+
   dev-client-kitchen:
     desc: Run Kitchen client dev
     cmds:
       - cd clients/kitchen-client && bun run dev
+
+  dev-client-find-my-trip:
+    desc: Run Find My Trip client dev
+    cmds:
+      - cd clients/find-my-trip-client && bun run dev
+
+  run-service-find-my-trip:
+    desc: Run Find My Trip service
+    cmds:
+      - cd services/find-my-trip && .venv/bin/uvicorn main:app --port 8000
+
+  dev-service-find-my-trip:
+    desc: Run Find My Trip service dev with hot reload
+    cmds:
+      - cd services/find-my-trip && .venv/bin/uvicorn main:app --port 8000 --reload
 
   dev:
     desc: Run all services concurrently (gateway, kitchen, mail, client)

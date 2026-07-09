@@ -1,3 +1,4 @@
 services/users/.env
 api-gateway/.env
 go.work.sum
+.env
