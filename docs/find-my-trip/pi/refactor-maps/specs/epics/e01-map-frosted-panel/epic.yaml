@@ -1,0 +1,166 @@
+epic_id: e01
+epic_title: "Map UI + Frosted Glass Panel Integration"
+epic_slug: "map-frosted-panel"
+created: 2026-07-08
+status: planned
+priority: P0
+bcps: 13
+
+## Epic Rationale
+Visual foundation: MapLibre interactive map on left, frosted glass results panel on right. Apple-style design (glassmorphism, SF Pro font, subtle shadows). This epic provides the container for all data display and user interaction.
+
+## Key Decisions
+- **Map Library**: MapLibre GL JS (open-source, no API key required)
+- **Styling**: TailwindCSS v4 + custom glassmorphism components
+- **Layout**: Flexbox, left 60% (map), right 40% (panel)
+- **Responsive**: Desktop-first (1024px+); mobile in v1.1
+
+## Dependencies
+- maplibre-gl (adds ~300KB gzipped)
+- TailwindCSS (existing)
+- React Router (existing)
+
+---
+
+## Stories
+
+stories:
+  - id: s01
+    title: "MapLibre Setup + Container"
+    slug: "map-setup"
+    points: 5
+    description: >
+      Install maplibre-gl, create map container, initialize with default center (San Francisco, 37.7749, -122.4194).
+      Map zoomed to level 12, interactive (pan, zoom, drag enabled).
+    
+    acceptance_criteria:
+      - ✅ maplibre-gl installed in package.json
+      - ✅ Map renders in app/components/Map.tsx
+      - ✅ Default center: 37.7749, -122.4194 (SF)
+      - ✅ Default zoom: 12
+      - ✅ Pan/zoom/drag functional
+      - ✅ Attribution visible (MapLibre license)
+      - ✅ No console errors
+    
+    tasks:
+      - task_id: s01t01
+        title: "Install maplibre-gl"
+        description: "npm install maplibre-gl"
+        acceptance_verify:
+          - bash: "grep -q 'maplibre-gl' /Users/prathm/Documents/p22194/clients/find-my-trip-client/package.json"
+      
+      - task_id: s01t02
+        title: "Create app/components/Map.tsx"
+        description: >
+          React component:
+          - useRef(null) for container div
+          - useEffect: new maplibregl.Map(container, { center, zoom, style })
+          - Default style: 'https://demotiles.maplibre.org/style.json'
+          - Cleanup: map.remove() on unmount
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/Map.tsx"
+          - bash: "grep -q 'maplibregl.Map' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/Map.tsx"
+      
+      - task_id: s01t03
+        title: "Verify map renders on home page"
+        description: >
+          Import Map component in app/routes/home.tsx, render without errors.
+          Manual test: npm run dev → localhost:5173 → map visible
+        
+        acceptance_verify:
+          - bash: "grep -q 'Map' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/routes/home.tsx"
+
+  - id: s02
+    title: "Frosted Glass Panel Component"
+    slug: "frosted-glass-panel"
+    points: 5
+    description: >
+      Create reusable frosted glass panel component. Apple-style:
+      - Translucent white background (rgba(255,255,255,0.7))
+      - Backdrop blur (blur-lg)
+      - Subtle border (border 1px rgba(255,255,255,0.5))
+      - Shadow (shadow-lg)
+      - Rounded corners (rounded-2xl)
+    
+    acceptance_criteria:
+      - ✅ Component app/components/FrostedGlassPanel.tsx
+      - ✅ Renders with correct CSS classes
+      - ✅ Accepts children prop
+      - ✅ Responsive padding/margins
+      - ✅ Works in light mode (visually tested)
+    
+    tasks:
+      - task_id: s02t01
+        title: "Create FrostedGlassPanel.tsx"
+        description: >
+          React component with TailwindCSS classes:
+          - bg-white/70 (70% opacity white)
+          - backdrop-blur-lg
+          - border border-white/50
+          - shadow-lg
+          - rounded-2xl
+          - p-6 (padding)
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/FrostedGlassPanel.tsx"
+          - bash: "grep -q 'bg-white\\|backdrop-blur' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/FrostedGlassPanel.tsx"
+      
+      - task_id: s02t02
+        title: "Test visual appearance"
+        description: >
+          Manual test:
+          - npm run dev → http://localhost:5173
+          - Verify frosted glass effect visible
+          - Verify text readable over background
+          - Test on Chrome, Firefox, Safari (blur support check)
+        
+        acceptance_verify:
+          - manual: "Visual test: frosted glass blur visible on 3 browsers"
+
+  - id: s03
+    title: "Layout Integration: Map + Panel Side-by-Side"
+    slug: "layout-integration"
+    points: 3
+    description: >
+      Integrate Map + FrostedGlassPanel into home.tsx.
+      Layout: flex container, map 60% left, panel 40% right.
+    
+    acceptance_criteria:
+      - ✅ Layout uses Flexbox
+      - ✅ Map 60% width, Panel 40% width
+      - ✅ Both fill height (full viewport)
+      - ✅ Responsive on desktop (1024px+)
+      - ✅ No horizontal scroll
+    
+    tasks:
+      - task_id: s03t01
+        title: "Update app/routes/home.tsx layout"
+        description: >
+          Render:
+          ```
+          <div className="flex h-screen">
+            <div className="w-3/5"><Map /></div>
+            <div className="w-2/5 p-4"><FrostedGlassPanel>...</FrostedGlassPanel></div>
+          </div>
+          ```
+        
+        acceptance_verify:
+          - bash: "grep -q 'flex h-screen' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/routes/home.tsx"
+      
+      - task_id: s03t02
+        title: "Manual verification: Layout renders correctly"
+        description: >
+          npm run dev → check:
+          - Map on left, panel on right
+          - No horizontal scrollbar
+          - Both fill viewport height
+        
+        acceptance_verify:
+          - manual: "Visual test: layout correct on 1024px+ desktop"
+
+---
+
+## Sign-off
+
+Ready for build-epic after e02 (API client).

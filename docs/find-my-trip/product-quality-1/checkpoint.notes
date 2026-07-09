@@ -1,0 +1,24 @@
+? Product So far
+* ✅ Maps Integrated
+* ✅ Groq API integrated
+* ✅ Search Integrated
+* ✅ Tests build (need attention but so far so good)
+
+
+? Features & Tasks Pending
+* Sessions Management
+
+! BUGS
+//! ❌ Search results are fuzzy/irrelevant
+! ❌ UI not responsive
+// ! ❌ Edge Cases
+// ! ❌ Captcha & rate limit issues 
+// ! ❌ UI doesn't look professional 
+
+? EDGE CASES
+* ✅ User clicks on an ocean, sea or unpopulated area
+* ✅ Clicks near a border
+* ✅ Place is not popular enough for quality search results
+* ⊡ cancelling an abandoned request / rate limiting
+* ⊡ spam proofing -> caching
+* ⊡ Search tool fails

@@ -1,0 +1,168 @@
+release: find-my-trip-client-mvp
+version: 1.0.0
+target_date: 2026-07-22
+created: 2026-07-08
+
+## Epics (WSJF ordered)
+
+epics:
+  - id: e01
+    title: "Map UI + Frosted Glass Panel Integration"
+    slug: "map-frosted-panel"
+    status: planned
+    priority: P0
+    business_value: 15
+    time_criticality: 10
+    risk_reduction: 8
+    wsjf_score: 33
+    bcps: 13
+    stories:
+      - s01: map-setup
+      - s02: frosted-glass-panel
+      - s03: layout-integration
+
+  - id: e02
+    title: "API Client + Error Handling"
+    slug: "api-client-error-handling"
+    status: planned
+    priority: P0
+    business_value: 20
+    time_criticality: 10
+    risk_reduction: 12
+    wsjf_score: 42
+    bcps: 21
+    stories:
+      - s01: fetch-wrapper-api-client
+      - s02: error-boundary-retry
+      - s03: schema-validation-zod
+
+  - id: e03
+    title: "Map Click + Data Fetch Integration"
+    slug: "map-click-data-fetch"
+    status: planned
+    priority: P0
+    business_value: 18
+    time_criticality: 10
+    risk_reduction: 10
+    wsjf_score: 38
+    bcps: 16
+    stories:
+      - s01: map-click-handler
+      - s02: coordinate-extraction
+      - s03: api-call-orchestration
+
+  - id: e04
+    title: "Results Display + Loading States"
+    slug: "results-display-loading"
+    status: planned
+    priority: P1
+    business_value: 14
+    time_criticality: 8
+    risk_reduction: 6
+    wsjf_score: 28
+    bcps: 11
+    stories:
+      - s01: results-card-component
+      - s02: unified-results-panel
+      - s03: loading-spinner-states
+
+  - id: e05
+    title: "API Integration Audit + Contract Testing"
+    slug: "api-audit-contracts"
+    status: planned
+    priority: P0
+    business_value: 16
+    time_criticality: 12
+    risk_reduction: 14
+    wsjf_score: 42
+    bcps: 18
+    stories:
+      - s01: postman-collection-audit
+      - s02: schema-contract-validation
+      - s03: error-scenario-testing
+
+## Phase Gates
+
+phase_gates:
+  - phase: DISCOVER (Complete)
+    status: ✅
+    checklist:
+      - survey-context
+      - scope-work
+      - research-first
+      - elaborate-spec
+      - plan-release
+      - slice-tasks
+
+  - phase: PLAN (In Progress)
+    status: 🔄
+    checklist:
+      - plan-work (e01-e05)
+      - define-language (ubiquitous domain model)
+      - plan-tests (risk-based test strategy)
+
+  - phase: BUILD (Ready)
+    status: ⏳
+    checklist:
+      - build-epic (one epic per execution)
+      - security-review (threat model)
+      - develop-tdd (vertical slices)
+      - verify-work (UAT + gates)
+
+  - phase: VERIFY (Ready)
+    status: ⏳
+    checklist:
+      - audit-code (quality gate)
+      - enforce-first (test quality)
+      - request-review (independent review)
+      - validate-contracts (API schema)
+
+  - phase: RELEASE (Ready)
+    status: ⏳
+    checklist:
+      - commit-message (Conventional Commits)
+      - release-branch (PR/land)
+      - trace-requirement (traceability matrix)
+
+## Execution Plan
+
+execution_order:
+  - epic: e02
+    reason: "API client + error handling are blocking dependencies for all other epics"
+  - epic: e01
+    reason: "Map UI foundation before integration"
+  - epic: e03
+    reason: "Click handler + data orchestration (depends on e01, e02)"
+  - epic: e04
+    reason: "Results display (depends on e02, e03)"
+  - epic: e05
+    reason: "Integration audit (validates all previous epics)"
+
+## Definition of Done (Story Level)
+
+story_dod:
+  - ✅ Red-green-refactor TDD cycle complete
+  - ✅ Unit + integration tests pass
+  - ✅ TypeScript typecheck passes
+  - ✅ Linter (Prettier/ESLint) passes
+  - ✅ Verify-work UAT checklist complete
+  - ✅ audit-code passes (non-optional gate)
+  - ✅ No console errors/warnings
+  - ✅ Browser tested (Chrome, Firefox, Safari)
+  - ✅ Accessibility baseline (WCAG 2.1 Level A)
+
+## Definition of Done (Epic Level)
+
+epic_dod:
+  - ✅ All stories in epic pass DOD
+  - ✅ Integration tests between stories pass
+  - ✅ API contract validation passes
+  - ✅ Security threat model reviewed
+  - ✅ Conventional Commits drafted
+  - ✅ PR opened (or ready to land)
+  - ✅ Traceability matrix updated
+  - ✅ Release notes drafted
+
+---
+
+**Status**: Ready for build-epic Phase 4 execution.

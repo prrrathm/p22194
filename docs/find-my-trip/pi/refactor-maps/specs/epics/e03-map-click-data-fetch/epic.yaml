@@ -1,0 +1,143 @@
+epic_id: e03
+epic_title: "Map Click + Data Fetch Integration"
+epic_slug: "map-click-data-fetch"
+created: 2026-07-08
+status: planned
+priority: P0
+bcps: 16
+
+## Epic Rationale
+Core interaction flow: user clicks map → coordinates captured → API calls triggered → data flows to results panel.
+Depends on: e02 (API client), e01 (map container).
+
+## Dependencies
+- e02: API client + error handling
+- e01: Map + panel layout
+
+---
+
+## Stories
+
+stories:
+  - id: s01
+    title: "Map Click Handler Setup"
+    slug: "map-click-handler"
+    points: 4
+    description: >
+      Add click event listener to map. On click, log coordinates to console.
+      Visual feedback: cursor change on map hover.
+    
+    acceptance_criteria:
+      - ✅ map.on('click', ...) handler attached
+      - ✅ Coordinates logged to console on click
+      - ✅ Cursor changes to pointer on map hover
+      - ✅ Handler cleanupd on unmount
+    
+    tasks:
+      - task_id: s01t01
+        title: "Update app/components/Map.tsx with click handler"
+        description: >
+          Add:
+          - map.on('click', (e) => console.log(e.lngLat))
+          - map.on('mouseenter', () => { map.getCanvas().style.cursor = 'pointer' })
+          - map.on('mouseleave', () => { map.getCanvas().style.cursor = '' })
+        
+        acceptance_verify:
+          - bash: "grep -q \"map.on('click'\" /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/Map.tsx"
+
+  - id: s02
+    title: "Coordinate Extraction + Validation"
+    slug: "coordinate-extraction"
+    points: 3
+    description: >
+      Extract lat/lng from map click event. Validate (latitude -90..90, longitude -180..180).
+      Emit as custom React event or callback prop.
+    
+    acceptance_criteria:
+      - ✅ Coordinates extracted: e.lngLat.lng, e.lngLat.lat
+      - ✅ Validation via Zod schema
+      - ✅ Invalid coords rejected silently or with console warning
+      - ✅ Callback prop onCoordinateSelect(lat, lng) called with valid coords
+    
+    tasks:
+      - task_id: s02t01
+        title: "Update Map.tsx to expose onCoordinateSelect callback"
+        description: >
+          Props:
+          - onCoordinateSelect?: (latitude: number, longitude: number) => void
+          
+          In click handler:
+          - Extract lat/lng
+          - Validate with LocationRequestSchema.parse()
+          - Call onCoordinateSelect(lat, lng) if valid
+        
+        acceptance_verify:
+          - bash: "grep -q 'onCoordinateSelect' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/Map.tsx"
+
+  - id: s03
+    title: "API Call Orchestration on Map Click"
+    slug: "api-call-orchestration"
+    points: 9
+    description: >
+      Call all 3 endpoints in parallel on map click: /group, /places, /activities.
+      Handle loading state, errors, and pass results to panel.
+    
+    acceptance_criteria:
+      - ✅ 3 endpoints called in Promise.all()
+      - ✅ Loading state visible during fetch
+      - ✅ Results aggregated and passed to results panel
+      - ✅ Error in one endpoint doesn't block others
+      - ✅ Retry available for failed endpoints
+    
+    tasks:
+      - task_id: s03t01
+        title: "Create app/api/location.ts with fetch functions"
+        description: >
+          Export:
+          - findGroupTours(lat, lng): Promise<LocationResponse>
+          - findPlaces(lat, lng): Promise<LocationResponse>
+          - findActivities(lat, lng): Promise<LocationResponse>
+          
+          Each uses HttpClient, includes validation, throws on error.
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/location.ts"
+          - bash: "grep -q 'findGroupTours\\|findPlaces\\|findActivities' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/location.ts"
+      
+      - task_id: s03t02
+        title: "Update home.tsx to orchestrate API calls"
+        description: >
+          State:
+          - useState([]).isLoading
+          - useState([]).results
+          - useState(null).error
+          
+          In onCoordinateSelect:
+          - setIsLoading(true)
+          - Promise.all([findGroupTours, findPlaces, findActivities])
+          - Aggregate results
+          - setResults(aggregated)
+          - setError(null)
+          - On error: setError(msg), allow retry
+        
+        acceptance_verify:
+          - bash: "grep -q 'Promise.all' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/routes/home.tsx"
+          - bash: "grep -q 'isLoading\\|setIsLoading' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/routes/home.tsx"
+      
+      - task_id: s03t03
+        title: "Write integration test: API orchestration"
+        description: >
+          Test:
+          - All 3 endpoints called with correct coords
+          - Results aggregated correctly
+          - Error in one endpoint caught
+          - Retry logic works
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/__tests__/location.test.ts"
+
+---
+
+## Sign-off
+
+Ready for build-epic after e01 + e02.

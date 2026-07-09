@@ -1,0 +1,291 @@
+epic_id: e02
+epic_title: "API Client + Error Handling"
+epic_slug: "api-client-error-handling"
+created: 2026-07-08
+status: planned
+priority: P0
+bcps: 21  # Business Complexity Points
+bcp_plus_breakdown:
+  frontend_complexity: 4
+  backend_complexity: 0
+  integration_complexity: 5
+  data_model_complexity: 2
+  state_management_complexity: 3
+  error_handling_complexity: 5
+  testing_complexity: 2
+  
+## Epic Rationale
+API client is the foundation for all data flow. Robust error handling + schema validation prevent silent failures and ensure type safety across the client-service boundary. This epic is blocking for e03 (map click integration) and e04 (results display).
+
+## Key Decisions
+- **API Client Pattern**: Simple fetch wrapper (no axios, tRPC, GraphQL)
+- **Error Handling**: Custom error class + retry logic for transient failures
+- **Schema Validation**: Zod runtime validators for all API responses
+- **Type Safety**: Full TypeScript with strict mode enabled
+- **Configuration**: Environment-based API base URL (.env)
+
+## Acceptance Criteria
+- ✅ Fetch wrapper correctly calls all 3 endpoints
+- ✅ Error handling covers 5 scenarios (network, timeout, validation, empty, schema)
+- ✅ Zod schemas validate responses at runtime
+- ✅ TypeScript strict mode passes
+- ✅ Unit tests cover happy path + all error paths
+- ✅ Integration test against live backend (localhost:8000) passes
+- ✅ Retry logic works for transient errors
+
+## Dependencies
+- `zod` package (adds ~15KB gzipped)
+- React hooks (useState, useEffect)
+- Existing: TypeScript, React Router
+
+---
+
+## Stories
+
+stories:
+  - id: s01
+    title: "Fetch Wrapper + Environment Configuration"
+    slug: "fetch-wrapper-api-client"
+    status: planned
+    points: 8
+    description: >
+      Create a simple fetch wrapper with environment-based API configuration.
+      Includes base URL, request/response logging, timeout handling.
+    
+    acceptance_criteria:
+      - ✅ Fetch wrapper exported from app/api/client.ts
+      - ✅ Base URL read from VITE_API_BASE_URL or .env (default: http://localhost:8000)
+      - ✅ All requests include Content-Type: application/json
+      - ✅ Request/response logged to console in dev mode only
+      - ✅ 5-second timeout on all requests (AbortController)
+      - ✅ Raw response returned; caller handles parsing/validation
+      - ✅ TypeScript strict mode passes
+    
+    tasks:
+      - task_id: s01t01
+        title: "Create app/api/client.ts with fetch wrapper"
+        description: >
+          Write a simple HttpClient class that wraps fetch with:
+          - Static baseUrl from env (VITE_API_BASE_URL)
+          - request(method, path, body?) → Promise<Response>
+          - Timeout via AbortController (5s)
+          - Dev logging for request/response
+        
+        acceptance_verify:
+          - bash: "grep -q 'VITE_API_BASE_URL' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/client.ts"
+          - bash: "grep -q 'AbortController' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/client.ts"
+          - bash: "grep -q 'export.*HttpClient' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/client.ts"
+      
+      - task_id: s01t02
+        title: "Update .env with VITE_API_BASE_URL"
+        description: >
+          Add VITE_API_BASE_URL=http://localhost:8000 to .env file.
+          Document in README that this can be overridden.
+        
+        acceptance_verify:
+          - bash: "grep -q 'VITE_API_BASE_URL=http://localhost:8000' /Users/prathm/Documents/p22194/clients/find-my-trip-client/.env"
+      
+      - task_id: s01t03
+        title: "Write unit tests for HttpClient"
+        description: >
+          Test cases:
+          - Successful fetch returns parsed response
+          - Timeout throws with message 'Request timeout'
+          - Network error throws with message 'Network error'
+          - Custom headers are sent correctly
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/__tests__/client.test.ts"
+          - bash: "npm run test -- app/api/__tests__/client.test.ts 2>&1 | grep -q 'passed\\|PASS'"
+
+  - id: s02
+    title: "Error Boundary + Retry Logic"
+    slug: "error-boundary-retry"
+    status: planned
+    points: 7
+    description: >
+      Custom error class + React error boundary for graceful error display.
+      Implement retry logic for transient failures (5xx, timeout, network errors).
+    
+    acceptance_criteria:
+      - ✅ ApiError class with message, statusCode, retryable flag
+      - ✅ Error boundary component catches thrown errors
+      - ✅ Retry button visible for retryable errors
+      - ✅ Exponential backoff: 1s, 2s, 4s (max 3 attempts)
+      - ✅ Non-retryable errors (4xx) shown with no retry button
+      - ✅ Error messages are user-friendly
+    
+    tasks:
+      - task_id: s02t01
+        title: "Create ApiError class in app/api/errors.ts"
+        description: >
+          Class with:
+          - message: string
+          - statusCode?: number
+          - originalError?: Error
+          - retryable: boolean (true for 5xx, timeout, network; false for 4xx)
+          - retry(fn: () => Promise<T>): Promise<T> with exponential backoff
+        
+        acceptance_verify:
+          - bash: "grep -q 'class ApiError' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/errors.ts"
+          - bash: "grep -q 'retryable' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/errors.ts"
+      
+      - task_id: s02t02
+        title: "Create ErrorBoundary React component"
+        description: >
+          Component that:
+          - Catches errors during render + event handlers
+          - Displays user-friendly error message
+          - Shows retry button for retryable errors
+          - Logs to console for debugging
+          - Styled with frosted glass panel (matching design system)
+        
+        acceptance_verify:
+          - bash: "grep -q 'ErrorBoundary' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/ErrorBoundary.tsx"
+          - bash: "grep -q 'FallbackUI\\|fallback' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/ErrorBoundary.tsx"
+      
+      - task_id: s02t03
+        title: "Write unit tests for error handling"
+        description: >
+          Test cases:
+          - ApiError correctly sets retryable flag based on statusCode
+          - Retry logic exponential backoff works
+          - ErrorBoundary catches render-time errors
+          - Retry button calls onRetry callback
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/__tests__/errors.test.ts"
+          - bash: "npm run test -- app/api/__tests__/errors.test.ts 2>&1 | grep -q 'passed\\|PASS'"
+
+  - id: s03
+    title: "Schema Validation with Zod"
+    slug: "schema-validation-zod"
+    status: planned
+    points: 6
+    description: >
+      Define Zod schemas for all API request/response shapes.
+      Runtime validation ensures type safety and catches schema mismatches early.
+    
+    acceptance_criteria:
+      - ✅ Zod schema for LocationRequest (latitude, longitude)
+      - ✅ Zod schema for SearchResult (title, url, snippet)
+      - ✅ Zod schema for LocationResponse (results array)
+      - ✅ Validation called on all API responses (throws if mismatch)
+      - ✅ TypeScript infers types from schemas (z.infer)
+      - ✅ Error messages helpful (not just "validation failed")
+    
+    tasks:
+      - task_id: s03t01
+        title: "Create app/api/schemas.ts with Zod validators"
+        description: >
+          Define:
+          - LocationRequestSchema: { latitude: number[-90..90], longitude: number[-180..180] }
+          - SearchResultSchema: { title: string, url: string, snippet: string }
+          - LocationResponseSchema: { results: SearchResult[] }
+          
+          Export TypeScript types via z.infer<typeof ...>.
+        
+        acceptance_verify:
+          - bash: "grep -q 'LocationRequestSchema\\|LocationResponseSchema' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/schemas.ts"
+          - bash: "grep -q 'z.infer' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/schemas.ts"
+      
+      - task_id: s03t02
+        title: "Integrate validation into API client"
+        description: >
+          Update HttpClient.request() to:
+          - Accept optional schema parameter
+          - Call schema.parse() on response body
+          - Throw ApiError with validation details if parse fails
+          - Return typed response (T)
+        
+        acceptance_verify:
+          - bash: "grep -q 'schema\\.parse\\|validate' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/client.ts"
+      
+      - task_id: s03t03
+        title: "Write unit tests for schema validation"
+        description: >
+          Test cases:
+          - Valid response passes validation
+          - Missing required field throws ApiError
+          - Invalid lat/lng range throws ApiError
+          - Extra fields are stripped (Zod default)
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/__tests__/schemas.test.ts"
+          - bash: "npm run test -- app/api/__tests__/schemas.test.ts 2>&1 | grep -q 'passed\\|PASS'"
+      
+      - task_id: s03t04
+        title: "Integration test: Postman collection audit"
+        description: >
+          Create/audit Postman collection against live backend:
+          - POST /location/group with valid coords → 200 with valid response
+          - POST /location/places with valid coords → 200 with valid response
+          - POST /location/activities with valid coords → 200 with valid response
+          - Invalid coords (e.g., lat > 90) → 422 with error message
+          - Timeout test (slow network simulation) → client handles gracefully
+          
+          Document findings in specs/verifications/POSTMAN_AUDIT.md
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/specs/verifications/POSTMAN_AUDIT.md"
+          - bash: "grep -q 'PASS\\|✅' /Users/prathm/Documents/p22194/specs/verifications/POSTMAN_AUDIT.md"
+
+---
+
+## Testing Strategy (TEA - Time/Edge-cases/Assumptions)
+
+### Time-based
+- Unit tests run in <1s (mocked HTTP)
+- Integration tests run in <10s (real HTTP to localhost:8000)
+
+### Edge Cases
+- Empty response (no results)
+- Malformed JSON
+- Missing fields in response
+- Invalid coordinates before API call
+- Network timeout
+- 5xx server errors
+- CORS errors
+
+### Assumptions
+- Backend at localhost:8000 is running and accessible
+- Backend follows Pydantic schema exactly
+- CORS is enabled on backend (already configured)
+
+---
+
+## Integration Audit Checklist
+
+Before e03 (map click integration) begins, audit that:
+
+- [ ] Fetch wrapper handles all HTTP error codes (2xx, 4xx, 5xx)
+- [ ] Schema validation rejects malformed responses
+- [ ] Retry logic doesn't retry non-transient errors (4xx)
+- [ ] Error messages are user-friendly (no stack traces in UI)
+- [ ] TypeScript strict mode passes
+- [ ] Zod version pinned (not ^major)
+- [ ] No unhandled promise rejections
+- [ ] Timeout works (manual test: add 10s delay to backend endpoint)
+- [ ] CORS preflight works (OPTIONS request succeeds)
+- [ ] Content-Type header correct (application/json)
+
+---
+
+## Artifact Outputs
+
+By end of epic, produce:
+- ✅ app/api/client.ts (HttpClient class)
+- ✅ app/api/errors.ts (ApiError class)
+- ✅ app/api/schemas.ts (Zod validators)
+- ✅ app/components/ErrorBoundary.tsx (React error boundary)
+- ✅ app/api/__tests__/client.test.ts
+- ✅ app/api/__tests__/errors.test.ts
+- ✅ app/api/__tests__/schemas.test.ts
+- ✅ specs/verifications/POSTMAN_AUDIT.md (integration findings)
+- ✅ specs/verifications/AUDIT-e02-s*.md (code audit per story)
+
+---
+
+## Sign-off
+
+Ready for plan-work → develop-tdd → verify-work → audit-code → release-branch.

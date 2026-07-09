@@ -1,0 +1,118 @@
+{
+  "info": {
+    "name": "Find My Trip API Audit",
+    "description": "Validation collection for find-my-trip service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Happy Path",
+      "item": [
+        {
+          "name": "POST /location/group",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"latitude\": 37.7749, \"longitude\": -122.4194}"
+            },
+            "url": { "raw": "http://localhost:8000/location/group" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('Status code is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        },
+        {
+          "name": "POST /location/places",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"latitude\": 37.7749, \"longitude\": -122.4194}"
+            },
+            "url": { "raw": "http://localhost:8000/location/places" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('Status code is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        },
+        {
+          "name": "POST /location/activities",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"latitude\": 37.7749, \"longitude\": -122.4194}"
+            },
+            "url": { "raw": "http://localhost:8000/location/activities" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('Status code is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "item": [
+        {
+          "name": "Invalid Latitude",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"latitude\": 91, \"longitude\": 0}" },
+            "url": { "raw": "http://localhost:8000/location/group" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('Status code is 422', () => pm.response.to.have.status(422));"] }
+            }
+          ]
+        },
+        {
+          "name": "Invalid Longitude",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"latitude\": 0, \"longitude\": 181}" },
+            "url": { "raw": "http://localhost:8000/location/group" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('Status code is 422', () => pm.response.to.have.status(422));"] }
+            }
+          ]
+        },
+        {
+          "name": "Missing Fields",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "http://localhost:8000/location/group" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('Status code is 422', () => pm.response.to.have.status(422));"] }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,240 @@
+epic_id: e05
+epic_title: "API Integration Audit + Contract Testing"
+epic_slug: "api-audit-contracts"
+created: 2026-07-08
+status: planned
+priority: P0
+bcps: 18
+
+## Epic Rationale
+Quality gate for the entire client-service integration. Audit API contracts, validate responses, test error scenarios.
+Runs AFTER all other epics complete (e01-e04).
+
+## Key Decisions
+- **Contract Testing**: Postman collection + runtime Zod validation
+- **Error Scenarios**: Network, timeout, malformed response, empty results, invalid coords
+- **Audit Report**: Comprehensive markdown with findings + remediation
+
+---
+
+## Stories
+
+stories:
+  - id: s01
+    title: "Postman Collection Audit"
+    slug: "postman-collection-audit"
+    points: 6
+    description: >
+      Create comprehensive Postman collection testing all endpoints.
+      Validate happy path + error scenarios.
+    
+    acceptance_criteria:
+      - ✅ Collection covers all 3 endpoints
+      - ✅ Tests for valid coordinates (200 response)
+      - ✅ Tests for invalid coordinates (400/422 error)
+      - ✅ Tests for missing fields (400 error)
+      - ✅ Tests for timeout (simulated with slow endpoint)
+      - ✅ CORS preflight tested (OPTIONS request)
+      - ✅ All tests pass against localhost:8000
+    
+    tasks:
+      - task_id: s01t01
+        title: "Create specs/verifications/postman-collection.json"
+        description: >
+          Postman collection with requests:
+          
+          **Happy Path:**
+          - POST /location/group { lat: 37.7749, lng: -122.4194 } → 200 OK
+          - POST /location/places { lat: 37.7749, lng: -122.4194 } → 200 OK
+          - POST /location/activities { lat: 37.7749, lng: -122.4194 } → 200 OK
+          
+          **Error Cases:**
+          - POST /location/group { lat: 91, lng: 0 } → 422 (invalid lat)
+          - POST /location/group { lat: 0, lng: 181 } → 422 (invalid lng)
+          - POST /location/group { } → 400 (missing fields)
+          
+          **Headers:**
+          - Content-Type: application/json (verify sent)
+          - CORS headers (verify in response)
+          
+          **Tests:**
+          - Response status code checks
+          - JSON schema validation (LocationResponse)
+          - Response time < 5000ms
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/specs/verifications/postman-collection.json"
+          - bash: "grep -q 'POST.*location' /Users/prathm/Documents/p22194/specs/verifications/postman-collection.json"
+      
+      - task_id: s01t02
+        title: "Run Postman collection against localhost:8000"
+        description: >
+          Using Newman (Postman CLI):
+          ```bash
+          npm install -g newman
+          newman run specs/verifications/postman-collection.json --environment local.postman_env.json
+          ```
+          
+          Export results to JSON for audit report.
+          All tests must PASS.
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/specs/verifications/POSTMAN_RESULTS.json"
+          - bash: "grep -q '\"failures\":\\s*\\[\\]' /Users/prathm/Documents/p22194/specs/verifications/POSTMAN_RESULTS.json || grep -q '\"passed\"' /Users/prathm/Documents/p22194/specs/verifications/POSTMAN_RESULTS.json"
+
+  - id: s02
+    title: "Schema Contract Validation"
+    slug: "schema-contract-validation"
+    points: 7
+    description: >
+      Verify API responses match Zod schemas. Test schema rejection of malformed data.
+      Document findings in audit report.
+    
+    acceptance_criteria:
+      - ✅ Backend response schema matches Zod definition
+      - ✅ Extra fields in response rejected (Zod strict mode)
+      - ✅ Missing required fields caught at parse time
+      - ✅ Type coercion works (string "123" → number 123)
+      - ✅ Audit report documents all checks
+    
+    tasks:
+      - task_id: s02t01
+        title: "Write schema contract tests"
+        description: >
+          Test file: app/api/__tests__/contract.test.ts
+          
+          Tests:
+          - Parse actual response from GET /location/group
+          - Verify shape: { results: [{ title, url, snippet }] }
+          - Verify all required fields present
+          - Verify optional fields handled
+          - Test Zod rejection of:
+            - Missing 'title' field
+            - Invalid 'url' type (non-string)
+            - Extra fields (should be stripped, not error)
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/api/__tests__/contract.test.ts"
+          - bash: "npm run test -- app/api/__tests__/contract.test.ts 2>&1 | grep -q 'passed\\|PASS'"
+      
+      - task_id: s02t02
+        title: "Run schema contract tests + document findings"
+        description: >
+          Run tests, capture output:
+          ```bash
+          npm run test -- app/api/__tests__/contract.test.ts > /tmp/contract-results.txt 2>&1
+          ```
+          
+          Document in specs/verifications/SCHEMA_CONTRACT.md:
+          - All checks passed/failed
+          - Response examples (redacted PII)
+          - Discovered schema mismatches (if any)
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/specs/verifications/SCHEMA_CONTRACT.md"
+
+  - id: s03
+    title: "Error Scenario Testing"
+    slug: "error-scenario-testing"
+    points: 5
+    description: >
+      Test client error handling for 5 realistic failure modes.
+      Document in audit report.
+    
+    acceptance_criteria:
+      - ✅ Network error (no internet) → User sees error message
+      - ✅ Timeout (>5s) → User sees timeout message + retry button
+      - ✅ Malformed response (invalid JSON) → User sees validation error
+      - ✅ Empty results (200 OK, but results=[]) → User sees "No results found"
+      - ✅ Invalid coordinates (400) → Client validates before API call
+    
+    tasks:
+      - task_id: s03t01
+        title: "Write error scenario integration tests"
+        description: >
+          Test file: app/__tests__/integration.error-scenarios.test.ts
+          
+          Use mock/intercept HTTP:
+          - Network error: throw new Error('Network failed')
+          - Timeout: delay response >5s
+          - Malformed JSON: return invalid JSON
+          - Empty results: return { results: [] }
+          - Invalid coords: zod validation rejects
+          
+          Verify client displays user-friendly messages.
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/__tests__/integration.error-scenarios.test.ts"
+      
+      - task_id: s03t02
+        title: "Manual error scenario testing"
+        description: >
+          Scenarios:
+          1. Disconnect network → Click map → See error message
+          2. Stop backend → Click map → See connection error
+          3. Simulate slow endpoint (add 10s delay) → Click map → See timeout
+          4. Mock empty results → Click map → See "No results found"
+          
+          Document findings in specs/verifications/ERROR_SCENARIOS.md
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/specs/verifications/ERROR_SCENARIOS.md"
+          - bash: "grep -q 'Network\\|Timeout\\|Slow\\|Empty' /Users/prathm/Documents/p22194/specs/verifications/ERROR_SCENARIOS.md"
+
+---
+
+## Integration Audit Report Template
+
+Create specs/verifications/INTEGRATION_AUDIT_FINAL.md:
+
+```markdown
+# Integration Audit: find-my-trip-client ↔ @services/find-my-trip
+
+## Executive Summary
+- Status: ✅ PASS / ❌ FAIL
+- Date: 2026-07-08
+- Auditor: [name]
+- Scope: Client-service API contract + error handling
+
+## 1. Postman Collection Results
+- All endpoints reachable: ✅
+- Happy path tests: ✅ (3/3 passed)
+- Error scenario tests: ✅ (6/6 passed)
+- CORS headers present: ✅
+- Response times < 5s: ✅
+
+### Findings
+[Document any mismatches, slow endpoints, etc.]
+
+## 2. Schema Contract Validation
+- Backend response matches Zod schema: ✅
+- All required fields present: ✅
+- Type validation strict: ✅
+
+### Findings
+[Document any schema mismatches]
+
+## 3. Error Handling
+- Network errors handled: ✅
+- Timeout handled: ✅
+- Malformed JSON rejected: ✅
+- Empty results handled: ✅
+- Invalid coordinates rejected client-side: ✅
+
+### Findings
+[Document user-facing error messages]
+
+## 4. Recommendations
+[Any improvements, future work, etc.]
+
+## 5. Sign-off
+- [ ] API contract validated
+- [ ] Error handling tested
+- [ ] Client ready for production
+```
+
+---
+
+## Sign-off
+
+Integration audit complete. Client ready for release.

@@ -1,0 +1,111 @@
+project: find-my-trip-client
+version: 1.0.0
+status_date: 2026-07-08
+
+## Epic Stories Status
+
+e01_map_frosted_panel:
+  epic_title: "Map UI + Frosted Glass Panel Integration"
+  status: planned
+  s01_map_setup:
+    status: pending
+    title: "MapLibre Setup + Container"
+    points: 5
+  s02_frosted_glass_panel:
+    status: pending
+    title: "Frosted Glass Panel Component"
+    points: 5
+  s03_layout_integration:
+    status: pending
+    title: "Layout Integration: Map + Panel Side-by-Side"
+    points: 3
+
+e02_api_client_error_handling:
+  epic_title: "API Client + Error Handling"
+  status: planned
+  s01_fetch_wrapper:
+    status: pending
+    title: "Fetch Wrapper + Environment Configuration"
+    points: 8
+  s02_error_boundary:
+    status: pending
+    title: "Error Boundary + Retry Logic"
+    points: 7
+  s03_schema_validation:
+    status: pending
+    title: "Schema Validation with Zod"
+    points: 6
+
+e03_map_click_data_fetch:
+  epic_title: "Map Click + Data Fetch Integration"
+  status: planned
+  s01_map_click_handler:
+    status: pending
+    title: "Map Click Handler Setup"
+    points: 4
+  s02_coordinate_extraction:
+    status: pending
+    title: "Coordinate Extraction + Validation"
+    points: 3
+  s03_api_orchestration:
+    status: pending
+    title: "API Call Orchestration on Map Click"
+    points: 9
+
+e04_results_display_loading:
+  epic_title: "Results Display + Loading States"
+  status: planned
+  s01_result_card:
+    status: pending
+    title: "Result Card Component"
+    points: 4
+  s02_results_panel:
+    status: pending
+    title: "Unified Results Panel"
+    points: 4
+  s03_loading_spinner:
+    status: pending
+    title: "Loading Spinner + Error State"
+    points: 3
+
+e05_api_audit_contracts:
+  epic_title: "API Integration Audit + Contract Testing"
+  status: planned
+  s01_postman_audit:
+    status: pending
+    title: "Postman Collection Audit"
+    points: 6
+  s02_schema_contract:
+    status: pending
+    title: "Schema Contract Validation"
+    points: 7
+  s03_error_scenarios:
+    status: pending
+    title: "Error Scenario Testing"
+    points: 5
+
+## Status Transitions
+
+status_map:
+  pending: "Story not started"
+  in_progress: "Story actively being developed"
+  review: "Completed development, awaiting review"
+  done: "Story complete, tests pass, audit passed"
+  blocked: "Story blocked by dependency or issue"
+
+## Metrics
+
+metrics:
+  total_stories: 15
+  total_bcps: 79
+  completed_stories: 0
+  completed_bcps: 0
+  completion_percentage: 0%
+  epics_completed: 0
+  epics_in_progress: 0
+  epics_pending: 5
+
+---
+
+**Last Updated**: 2026-07-08
+**Next Action**: Begin build-epic for e02 (API Client + Error Handling)

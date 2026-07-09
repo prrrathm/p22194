@@ -1,0 +1,130 @@
+epic_id: e04
+epic_title: "Results Display + Loading States"
+epic_slug: "results-display-loading"
+created: 2026-07-08
+status: planned
+priority: P1
+bcps: 11
+
+## Epic Rationale
+Results presentation layer. Display aggregated results from e03 in frosted glass panel.
+Loading spinner, empty state, error state. Depends on e02, e03.
+
+---
+
+## Stories
+
+stories:
+  - id: s01
+    title: "Result Card Component"
+    slug: "results-card-component"
+    points: 4
+    description: >
+      Reusable card component for each result. Shows title, snippet, category badge, link.
+      Styled with glassmorphism (semi-transparent bg, subtle border).
+    
+    acceptance_criteria:
+      - ✅ Component: app/components/ResultCard.tsx
+      - ✅ Props: title, snippet, url, category (group|place|activity)
+      - ✅ Category badge (colored: blue for group, green for place, orange for activity)
+      - ✅ Clickable link (target="_blank", rel="noopener noreferrer")
+      - ✅ Hover effect (subtle scale, shadow increase)
+    
+    tasks:
+      - task_id: s01t01
+        title: "Create app/components/ResultCard.tsx"
+        description: >
+          Component structure:
+          ```tsx
+          interface ResultCardProps {
+            title: string
+            snippet: string
+            url: string
+            category: 'group' | 'place' | 'activity'
+          }
+          
+          export function ResultCard({ title, snippet, url, category }: ResultCardProps) {
+            return (
+              <a href={url} target="_blank">
+                <div className="bg-white/50 backdrop-blur-sm p-4 rounded-lg border border-white/50 hover:shadow-lg hover:scale-105">
+                  <span className="badge">{category}</span>
+                  <h3>{title}</h3>
+                  <p>{snippet.substring(0, 100)}...</p>
+                </div>
+              </a>
+            )
+          }
+          ```
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/ResultCard.tsx"
+
+  - id: s02
+    title: "Unified Results Panel"
+    slug: "unified-results-panel"
+    points: 4
+    description: >
+      Panel that displays all results from the 3 API calls in a single scrollable list.
+      Results organized by category (group tours first, then places, then activities).
+    
+    acceptance_criteria:
+      - ✅ Component: app/components/ResultsPanel.tsx
+      - ✅ Accepts results array (with category field)
+      - ✅ Scrollable within panel (max-height with overflow-y-auto)
+      - ✅ Results separated by category headers (e.g., "Group Tours", "Places", "Activities")
+      - ✅ Empty state message when no results
+    
+    tasks:
+      - task_id: s02t01
+        title: "Create app/components/ResultsPanel.tsx"
+        description: >
+          Component:
+          - Groups results by category
+          - Renders category headers
+          - Maps ResultCard for each result
+          - Shows empty state if no results
+          - Scrollable container (max-h-[500px] overflow-y-auto)
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/ResultsPanel.tsx"
+
+  - id: s03
+    title: "Loading Spinner + Error State"
+    slug: "loading-spinner-states"
+    points: 3
+    description: >
+      Show loading spinner while fetching. Show error message if API fails.
+      Both styled with frosted glass aesthetic.
+    
+    acceptance_criteria:
+      - ✅ Spinner visible during isLoading state
+      - ✅ Error message shown with retry button
+      - ✅ Both styled consistently with frosted glass design
+    
+    tasks:
+      - task_id: s03t01
+        title: "Create app/components/LoadingSpinner.tsx"
+        description: >
+          SVG spinner or animated div with TailwindCSS.
+          Styled: frosted glass background, centered, with text "Finding results..."
+        
+        acceptance_verify:
+          - bash: "test -f /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/components/LoadingSpinner.tsx"
+      
+      - task_id: s03t02
+        title: "Update ResultsPanel to show loading/error states"
+        description: >
+          In home.tsx, conditionally render:
+          - {isLoading && <LoadingSpinner />}
+          - {error && <ErrorMessage error={error} onRetry={handleRetry} />}
+          - {!isLoading && !error && <ResultsPanel results={results} />}
+        
+        acceptance_verify:
+          - bash: "grep -q 'isLoading' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/routes/home.tsx"
+          - bash: "grep -q 'LoadingSpinner' /Users/prathm/Documents/p22194/clients/find-my-trip-client/app/routes/home.tsx"
+
+---
+
+## Sign-off
+
+Ready for build-epic after e03.

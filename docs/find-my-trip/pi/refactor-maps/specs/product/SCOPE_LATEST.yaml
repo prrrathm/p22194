@@ -1,0 +1,130 @@
+project: find-my-trip-client
+version: 1.0.0
+date: 2026-07-08
+status: SCOPED
+
+## Overview
+Client application for @services/find-my-trip backend service. Users click on a map location to discover group tours, places to see, and activities at that location.
+
+## In Scope
+
+### UI/UX
+- Interactive MapLibre map (left side, 60% width)
+- Right-side frosted glass panel (40% width) for results display
+- Apple-style design language: glassmorphism, SF Pro font, subtle shadows
+- Responsive on desktop (1024px+); mobile breakpoint planned post-MVP
+
+### Map Interactions
+- Pan, zoom, drag capabilities
+- Click handler: lat/lng captured on map click
+- Visual feedback: cursor change, click animation
+- Attribution & watermarks per MapLibre license
+
+### API Integration
+- Simple fetch wrapper (no axios/tRPC complexity)
+- Three endpoints: /location/group, /location/places, /location/activities
+- Request: { latitude: number, longitude: number }
+- Response: { results: [{ title, url, snippet }] }
+- Base URL: http://localhost:8000 (configurable via .env)
+
+### Data Handling & Display
+- Single unified results panel: displays results from all 3 endpoints
+- Result card layout with title, snippet, link/CTA
+- Category badges (group tour / place / activity)
+- Sorted by relevance/API order
+
+### Error Handling (Critical)
+- Network errors: user-friendly message + retry button
+- Timeout handling (5s per endpoint)
+- Invalid coordinates: validation before API call
+- Empty results: "No results found" message
+- API schema validation: ensure response matches LocationResponse shape
+- Graceful degradation if one endpoint fails (others still show)
+
+### Loading States
+- Spinner during API fetch (per endpoint or unified?)
+- Disable map during fetch (or allow re-clicking?)
+- Progressive result display (as each category loads)
+
+## Out of Scope
+
+### MVP 1.0
+- Geolocation (auto-detect user location) — **v1.1**
+- Result filtering/search bar — **v1.1**
+- Map markers/pins for results — **v1.1**
+- Result bookmarking/favorites — **v2.0**
+- Responsive mobile UI (<1024px) — **v1.1**
+- Map styles/theming customization — **v2.0**
+- Authentication/user accounts — **future**
+- Itinerary creation — **future**
+
+### Technical Debt
+- PWA/offline support — **future**
+- API response caching/SWR — **v1.1**
+- Analytics tracking — **future**
+
+## Key Decisions
+
+1. **Map Library**: MapLibre GL JS (open-source, no API key required for basic usage)
+2. **Styling**: TailwindCSS v4 + custom glassmorphism components (existing in project)
+3. **API Client**: Vanilla fetch with custom error handler (no deps)
+4. **State Management**: React hooks (useState/useEffect) — no Redux/Zustand
+5. **Type Safety**: Full TypeScript with Zod schema validation
+6. **Testing Strategy**: 
+   - Unit tests for API client error handling
+   - Integration tests for client↔service contract
+   - E2E validation: Postman collection against live endpoints
+
+## Success Criteria
+
+- ✅ Map renders without errors
+- ✅ Click handler captures correct lat/lng
+- ✅ All 3 API calls succeed with valid responses
+- ✅ Results display in frosted glass panel
+- ✅ Error handling works for 5 scenarios (network, timeout, validation, empty, schema)
+- ✅ Zero console errors/warnings
+- ✅ API response validation passes
+- ✅ Typecheck passes (`npm run typecheck`)
+
+## Dependencies
+
+### External
+- maplibre-gl (map library)
+- zod (schema validation)
+
+### Internal
+- @services/find-my-trip (backend service)
+- React Router (existing)
+- TailwindCSS (existing)
+
+## Non-Functional Requirements
+
+| Requirement | Target | Rationale |
+|---|---|---|
+| **Time to Interactive** | <2s | User expects snappy map load |
+| **API Response Time** | <5s per endpoint | Timeout threshold |
+| **Map Pan/Zoom** | 60fps | Smooth interactions |
+| **Accessibility (WCAG)** | AA (post-MVP) | Legal requirement |
+| **Bundle Size Delta** | <150KB (gzipped) | Keep lean client |
+
+## Assumptions
+
+1. Backend service is deployed and running at http://localhost:8000
+2. Backend CORS is enabled (already configured in FastAPI app)
+3. MapLibre can be self-hosted or CDN loaded
+4. API responses always follow the Pydantic schema (no malformed JSON)
+5. Latitude/longitude coordinates are always valid (backend validates)
+
+## Risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Backend API downtime | 🔴 HIGH | Implement error messages + health check endpoint call |
+| MapLibre rendering issues | 🟡 MEDIUM | Test on Chrome, Firefox, Safari; use known stable version |
+| CORS failures | 🔴 HIGH | Verify CORS config on backend; use OPTIONS pre-flight |
+| Slow API response | 🟡 MEDIUM | Add timeout + show loading state |
+| Schema mismatch | 🔴 HIGH | Validate with Zod at runtime; audit with Postman |
+
+---
+
+**Sign-off**: Ready to slice into stories and plan work.

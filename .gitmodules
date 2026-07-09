@@ -26,3 +26,7 @@
 	path = clients/find-my-trip-client
 	url = https://github.com/prrrathm/find-my-trip-client.git
 	branch = main
+[submodule "clients/p22194-god-client"]
+	path = clients/p22194-god-client
+	url = https://github.com/prrrathm/p22194-god-client.git
+	branch = main
