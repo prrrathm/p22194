@@ -1,0 +1,7 @@
+name = "p22194-api-proxy"
+main = "worker.js"
+compatibility_date = "2026-07-10"
+
+routes = [
+  { pattern = "api.prrrathm.com/*", zone_name = "prrrathm.com" }
+]

@@ -1,0 +1,12 @@
+FROM golang:1.26-bookworm AS builder
+WORKDIR /src
+COPY mdb-schemas/ ./mdb-schemas/
+COPY services/users/ ./services/users/
+WORKDIR /src/services/users
+RUN GOWORK=off go mod download
+RUN GOWORK=off CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/users .
+
+FROM gcr.io/distroless/static-debian12
+COPY --from=builder /out/users /users
+EXPOSE 8080
+CMD ["/users"]

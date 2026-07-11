@@ -1,4 +1,41 @@
+# Environment files (contain secrets)
+.env
+.env.*
+!.env.example
+
+# Services local env files
+services/find-my-trip/.env
 services/users/.env
 api-gateway/.env
+
+# Vercel
+.vercel
+
+# Go workspace sum
 go.work.sum
-.env
+
+# Cloudflare Wrangler cache
+cloudflare-worker/.wrangler/cache
+cloudflare-worker/.wrangler/tmp
+
+# Node
+node_modules/
+dist/
+.next/
+.vercel/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+services/find-my-trip/.venv/
+services/searxng/container/.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

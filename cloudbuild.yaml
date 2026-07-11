@@ -1,0 +1,35 @@
+steps:
+  # Build users service
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'Dockerfile.users', '-t', 'gcr.io/$PROJECT_ID/users', '.']
+    id: build-users
+
+  # Build god-svc
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'Dockerfile.god-svc', '-t', 'gcr.io/$PROJECT_ID/god-svc', '.']
+    id: build-god-svc
+
+  # Build api-gateway
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'Dockerfile.api-gateway', '-t', 'gcr.io/$PROJECT_ID/api-gateway', '.']
+    id: build-api-gateway
+
+  # Build find-my-trip
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'Dockerfile.find-my-trip', '-t', 'gcr.io/$PROJECT_ID/find-my-trip', '.']
+    id: build-find-my-trip
+
+  # Build searxng
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'Dockerfile.searxng', '-t', 'gcr.io/$PROJECT_ID/searxng', '.']
+    id: build-searxng
+
+images:
+  - 'gcr.io/$PROJECT_ID/users'
+  - 'gcr.io/$PROJECT_ID/god-svc'
+  - 'gcr.io/$PROJECT_ID/api-gateway'
+  - 'gcr.io/$PROJECT_ID/find-my-trip'
+  - 'gcr.io/$PROJECT_ID/searxng'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,0 +1,29 @@
+FROM python:3.12-bookworm AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential python3-dev libxml2-dev libxslt1-dev \
+    libffi-dev libssl-dev zlib1g-dev brotli git && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+COPY services/searxng/requirements.txt services/searxng/requirements-server.txt ./
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt -r requirements-server.txt
+COPY services/searxng/searx/ ./searx/
+RUN python -m compileall -q -f searx/
+RUN echo 'VERSION_STRING = "1.0.0"\nVERSION_TAG = "1.0.0"\nDOCKER_TAG = "1.0.0"\nGIT_URL = "unknown"\nGIT_BRANCH = "unknown"' > searx/version_frozen.py
+
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxml2 libxslt1.1 libffi8 libssl3 && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /usr/local/searxng
+COPY --from=builder /install/ /usr/local/
+COPY --from=builder /build/searx/ ./searx/
+COPY services/searxng/cloudrun-settings.yml ./settings.yml
+ENV SEARXNG_SETTINGS_PATH=/usr/local/searxng/settings.yml \
+    GRANIAN_HOST="::" \
+    GRANIAN_PORT="8080" \
+    GRANIAN_INTERFACE="wsgi" \
+    GRANIAN_WORKERS=1 \
+    GRANIAN_THREADS=2 \
+    SEARXNG_BASE_URL=""
+EXPOSE 8080
+CMD ["python", "-m", "granian", "searx.webapp:app"]

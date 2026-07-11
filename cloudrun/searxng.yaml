@@ -1,0 +1,30 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: searxng
+  annotations:
+    run.googleapis.com/launch-stage: BETA
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "true"
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+    spec:
+      containerConcurrency: 20
+      containers:
+      - image: gcr.io/PROJECT_ID/searxng
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SEARXNG_PORT
+          value: "8080"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+  traffic:
+  - latestRevision: true
+    percent: 100

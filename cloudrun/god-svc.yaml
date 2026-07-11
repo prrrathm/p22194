@@ -1,0 +1,36 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: god-svc
+  annotations:
+    run.googleapis.com/launch-stage: BETA
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "true"
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+    spec:
+      containerConcurrency: 80
+      containers:
+      - image: gcr.io/PROJECT_ID/god-svc
+        ports:
+        - containerPort: 8080
+        env:
+        - name: GOD_ADDR
+          value: ":8080"
+        - name: GOD_MONGO_DB
+          value: "p22194"
+        - name: GOD_LOG_FORMAT
+          value: "json"
+        - name: GOD_LOG_LEVEL
+          value: "info"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+  traffic:
+  - latestRevision: true
+    percent: 100

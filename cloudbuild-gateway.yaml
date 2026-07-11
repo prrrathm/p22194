@@ -1,0 +1,7 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'Dockerfile.api-gateway', '-t', 'gcr.io/$PROJECT_ID/api-gateway', '.']
+images:
+  - 'gcr.io/$PROJECT_ID/api-gateway'
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,0 +1,12 @@
+FROM golang:1.26-bookworm AS builder
+WORKDIR /src
+COPY mdb-schemas/ ./mdb-schemas/
+COPY services/p22194-god-svc/ ./services/p22194-god-svc/
+WORKDIR /src/services/p22194-god-svc
+RUN GOWORK=off go mod download
+RUN GOWORK=off CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/god-svc .
+
+FROM gcr.io/distroless/static-debian12
+COPY --from=builder /out/god-svc /god-svc
+EXPOSE 8080
+CMD ["/god-svc"]

@@ -1,0 +1,30 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: find-my-trip
+  annotations:
+    run.googleapis.com/launch-stage: BETA
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "true"
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+    spec:
+      containerConcurrency: 80
+      containers:
+      - image: gcr.io/p22194/find-my-trip
+        ports:
+        - containerPort: 8080
+        env:
+        - name: AGENT_MODEL
+          value: "llama3.2"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+  traffic:
+  - latestRevision: true
+    percent: 100

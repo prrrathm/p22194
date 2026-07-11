@@ -1,0 +1,33 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: api-gateway
+  annotations:
+    run.googleapis.com/launch-stage: BETA
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "true"
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "5"
+    spec:
+      containerConcurrency: 100
+      containers:
+      - image: gcr.io/PROJECT_ID/api-gateway
+        ports:
+        - containerPort: 8080
+        env:
+        - name: GATEWAY_SERVER_ADDR
+          value: ":8080"
+        - name: GATEWAY_LOG_FORMAT
+          value: "json"
+        - name: GATEWAY_LOG_LEVEL
+          value: "info"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+  traffic:
+  - latestRevision: true
+    percent: 100
