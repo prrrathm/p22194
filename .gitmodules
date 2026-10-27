@@ -34,3 +34,7 @@
 	path = services/p22194-god-svc
 	url = https://github.com/prrrathm/p22194-god-svc.git
 	branch = main
+[submodule "services/searxng"]
+	path = services/searxng
+	url = https://github.com/searxng/searxng.git
+	branch = master
